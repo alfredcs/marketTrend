@@ -5,7 +5,11 @@ import pandas as pd
 import numpy as np
 import datetime
 import uuid
-import logging,os
+import logging, os
+import twint
+import nest_asyncio
+import pandas as pd
+import datetime
 from elasticsearch import Elasticsearch
 from botocore.exceptions import ClientError
 
@@ -15,6 +19,8 @@ translate = boto3.client("translate")
 comprehend = boto3.client('comprehend')
 dynamodb = boto3.resource('dynamodb')
 es=Elasticsearch(['https://search-twitter-c4idtc5xplyaujgttxrwhyoede.us-west-2.es.amazonaws.com/'], http_auth=('mltest', 'take2tEZ!'))
+now = datetime.datetime.now()
+local_filename="twitter_"+str(int(datetime.datetime.timestamp(now)))+".csv"
 
 def isNaN(str):
     str != str
@@ -22,25 +28,22 @@ def isNaN(str):
 def to_str(var):
     return str(list(np.reshape(np.asarray(var), (1, np.size(var)))[0]))[1:-1]
 
-def upload_file(file_name, bucket, object_name=None):
-    """Upload a file to an S3 bucket
-    :param file_name: File to upload
-    :param bucket: Bucket to upload to
-    :param object_name: S3 object name. If not specified then file_name is used
-    :return: True if file was uploaded, else False
-    """
-    # If S3 object_name was not specified, use file_name
-    if object_name is None:
-        object_name = file_name
-
-    # Upload the file
-    s3_client = boto3.client('s3')
-    try:
-        response = s3_client.upload_file(file_name, bucket, object_name)
-    except ClientError as e:
-        logging.error(e)
-        return False
+def get_tweets(key_words, filename, since_date):
+    c = twint.Config()
+    #c.Search = "neo4j OR \graph database\ OR \graph databases \ OR graphdb OR graphconnect OR @neoquestions OR @Neo4jDE OR @Neo4jFr OR neotechnology"
+    #c.Search = "memory OR \flash memory\ OR \sk hynix\ OR sandisk OR intel OR micron OR microship OR samsung OR kioxia OR marvell OR \on semiconductor\ OR Infineon OR \flash memory\ OR nand"
+    #c.Search = "cisco OR \Juniper Networks\ OR \hpe aruba\ OR huawei  OR \arista networks\ OR netgear OR vmware OR \extreme networks\ OR dell"
+    c.Search = key_words
+    #c.Store_json = True
+    c.Store_csv = True
+    #c.Custom[\user\] = [\\, \tweet\, \user_id\, \username\, \hashtags\, \mentions\]g
+    c.User_full = True
+    c.Output = filename
+    c.Since = since_date
+    c.Hide_output = True
+    twint.run.Search(c)
     return True
+
 def make_json(csvFilePath, jsonFilePath):
     # create a dictionary
     data = {}
@@ -75,10 +78,15 @@ reader = csv.reader(file_content, delimiter='|')
 
 
 
+# Get tweets
+try:
+    get_tweets("cisco", local_filename, "2021-05-17")
 
+except Exception as e:
+    logging.error(e)
 
 # Get from a local CSV
-file_content = open('t8.csv')
+file_content = open(local_filename)
 col_list = ["conversation_id","created_at","timezone","place","tweet","language"]
 data = pd.read_csv(file_content, usecols=col_list)
 #reader = csv.reader(file_content, delimiter=',', quotechar='|')
