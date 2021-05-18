@@ -18,7 +18,7 @@ s3 = boto3.client("s3")
 translate = boto3.client("translate")
 comprehend = boto3.client('comprehend')
 dynamodb = boto3.resource('dynamodb')
-es=Elasticsearch(['https://search-twitter-c4idtc5xplyaujgttxrwhyoede.us-west-2.es.amazonaws.com/'], http_auth=('mltest', 'take2tEZ!'))
+es=Elasticsearch(['https://search-twitter-c4idtc5xplyaujgttxrwhyoede.us-west-2.es.amazonaws.com/'], http_auth=('<username_changeme>', '<password_changeme>'))
 now = datetime.datetime.now()
 local_filename="twitter_"+str(int(datetime.datetime.timestamp(now)))+".csv"
 
